@@ -171,7 +171,7 @@ fun medicationEntrySupportingText(
     val applicationTypeLabel = stringResource(applicationType.labelRes)
         .takeIf {
             shouldIncludeApplicationTypeInSupportingText(
-                hasMedicine = medicine != null,
+                medicine = medicine,
                 applicationType = applicationType,
             )
         }
@@ -198,8 +198,9 @@ internal fun shouldUseApplicationTypeAsMedicationEntryTitle(
 }
 
 internal fun shouldIncludeApplicationTypeInSupportingText(
-    hasMedicine: Boolean,
+    medicine: Medicine?,
     applicationType: MedicationApplicationType,
 ): Boolean {
-    return hasMedicine || applicationType == MedicationApplicationType.PATCH_OFF
+    if (medicine?.selection is MedicineSelection.Custom) return false
+    return medicine != null || applicationType == MedicationApplicationType.PATCH_OFF
 }
