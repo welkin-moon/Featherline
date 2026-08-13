@@ -52,17 +52,27 @@ class MedicationUiTextTest {
     fun unresolved_non_patch_off_entry_omits_application_type_from_supporting_text() {
         assertFalse(
             shouldIncludeApplicationTypeInSupportingText(
-                hasMedicine = false,
+                medicine = null,
                 applicationType = MedicationApplicationType.ORAL,
             ),
         )
     }
 
     @Test
-    fun resolved_oral_entry_includes_application_type_in_supporting_text() {
+    fun resolved_catalog_oral_entry_includes_application_type_in_supporting_text() {
         assertTrue(
             shouldIncludeApplicationTypeInSupportingText(
-                hasMedicine = true,
+                medicine = testMedicine(),
+                applicationType = MedicationApplicationType.ORAL,
+            ),
+        )
+    }
+
+    @Test
+    fun resolved_custom_oral_entry_omits_application_type_from_supporting_text() {
+        assertFalse(
+            shouldIncludeApplicationTypeInSupportingText(
+                medicine = testCustomMedicine(medicationName = "Progesterone"),
                 applicationType = MedicationApplicationType.ORAL,
             ),
         )
@@ -154,12 +164,33 @@ class MedicationUiTextTest {
     }
 
     @Test
-    fun medicationEntrySupportingText_usesShortPatchRouteAndAggregatePatchDose() {
+    fun medicationEntrySupportingText_customMedicineOmitsRouteButKeepsDose() {
         var text: String? = null
 
         composeRule.setContent {
             text = medicationEntrySupportingText(
                 medicine = testCustomMedicine(
+                    medicationName = "Progesterone",
+                    preparation = MedicinePreparation.Capsule(strengthMgPerCapsule = 100.0),
+                ),
+                doseInstruction = DoseInstruction.WholeUnit,
+                applicationType = MedicationApplicationType.ORAL,
+                count = 1,
+            )
+        }
+        composeRule.waitForIdle()
+
+        assertEquals("100 mg", text)
+    }
+
+    @Test
+    fun medicationEntrySupportingText_catalogPatchUsesShortRouteAndAggregatePatchDose() {
+        var text: String? = null
+
+        composeRule.setContent {
+            text = medicationEntrySupportingText(
+                medicine = testMedicine(
+                    key = MedicationKey.ESTRADIOL,
                     preparation = MedicinePreparation.Patch(
                         MedicinePreparation.PatchSpecification.TotalMg(valueMg = 1.44),
                     ),
