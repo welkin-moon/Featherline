@@ -30,10 +30,6 @@ class MedicationDetailTextTest {
 
     @Before
     fun stubContextResources() {
-        // doseInstructionText/medicinePreparationSummary resolve the locale via
-        // context.currentAppLocale(), which reads context.resources.configuration.
-        // The strict mock has no Resources, so back it with the real Robolectric
-        // resources (default locale) while getString stays per-test mocked.
         every { context.resources } returns realContext.resources
     }
 
@@ -59,7 +55,6 @@ class MedicationDetailTextTest {
 
     @Test
     fun buildExpandedDetailLines_aboveCap_truncatesAndReportsRemainder() {
-        // Mix multiple groups so the cap respects the flat across-groups order.
         val result = buildExpandedDetailLines(
             items = bundleItems(groupCount = 2, medicationsPerGroup = 3),
         ) { groupName, medication -> "$groupName/${medication.uuid}" }
@@ -134,7 +129,6 @@ class MedicationDetailTextTest {
 
         val result = medicationDetailLine(context, "Estrogens", medication)
 
-        // A single whole tablet is implied by the active mg line; "1 tablet" portion is suppressed.
         assertEquals("Estrogens · Estradiol valerate · Oral · 2 mg", result)
     }
 
@@ -165,13 +159,7 @@ class MedicationDetailTextTest {
     }
 
     @Test
-    fun medicationDetailLine_capsulePreparationRendersActiveOnlyAtSingleCount() {
-        every { context.getString(R.string.medication_application_oral) } returns "Oral"
-        every { context.getString(R.string.unit_mg) } returns "mg"
-        every {
-            context.getString(R.string.dose_instruction_summary_active_amount, "100", "mg")
-        } returns "100 mg"
-
+    fun medicationDetailLine_customCapsuleOmitsInferredRoute() {
         val medication = testMedicationGroupMedication(
             medicine = testCustomMedicine(
                 medicationName = "Progesterone",
@@ -182,13 +170,13 @@ class MedicationDetailTextTest {
             count = 1,
         )
 
-        val result = medicationDetailLine(context, "Progesterone", medication)
+        val result = medicationDetailLine(realContext, "Progesterone", medication)
 
-        assertEquals("Progesterone · Progesterone · Oral · 100 mg", result)
+        assertEquals("Progesterone · Progesterone · 100 mg", result)
     }
 
     @Test
-    fun medicationDetailLine_capsuleCountShowsAggregateRealIntakeWithoutMultiplicityPrefix() {
+    fun medicationDetailLine_customCapsuleCountOmitsRouteAndShowsAggregateIntake() {
         val medication = testMedicationGroupMedication(
             medicine = testCustomMedicine(
                 medicationName = "Progesterone",
@@ -201,12 +189,11 @@ class MedicationDetailTextTest {
 
         val result = medicationDetailLine(realContext, "Progesterone", medication)
 
-        assertEquals("Progesterone · Progesterone · Oral · 2 capsules · 10 mg", result)
+        assertEquals("Progesterone · Progesterone · 2 capsules · 10 mg", result)
     }
 
     @Test
     fun medicationDetailLine_omitsDoseSegmentForPatchOff() {
-        // A PATCH_OFF slot carries no medicine — no dose segment is rendered.
         val medication = testMedicationGroupMedication(
             medicine = null,
             applicationType = MedicationApplicationType.PATCH_OFF,
@@ -216,7 +203,6 @@ class MedicationDetailTextTest {
 
         val result = medicationDetailLine(realContext, "Estrogens", medication)
 
-        // Route falls back into the title for PATCH_OFF; don't duplicate the label.
         assertEquals("Estrogens · Remove patch", result)
     }
 }
