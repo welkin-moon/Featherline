@@ -3,6 +3,7 @@ package com.mkx.hrttracker.reminder
 import android.content.Context
 import com.mkx.hrttracker.model.medication.MedicationApplicationType
 import com.mkx.hrttracker.model.medication.MedicationGroupMedication
+import com.mkx.hrttracker.model.medication.MedicineSelection
 import com.mkx.hrttracker.util.doseInstructionText
 import com.mkx.hrttracker.util.medicationEntryTitle
 import com.mkx.hrttracker.util.medicationRouteLabel
@@ -22,13 +23,15 @@ fun medicationDetailLine(
         count = medication.count,
     )
 
-    // PATCH_OFF is titled by the removal string ("Remove patch"); its route label is
-    // the shortened "Patch", which adds nothing next to that title, so omit it.
-    // Otherwise drop the route label only when it duplicates the title.
-    val routeSegment = if (medication.applicationType == MedicationApplicationType.PATCH_OFF) {
-        null
-    } else {
-        appType.takeIf { it != name }
+    // Custom medicines do not have a canonical route. The stored application
+    // type can be a preparation-derived fallback (for example ORAL for a
+    // capsule), so surfacing it would present an inference as user-entered data.
+    // PATCH_OFF is titled by the removal string ("Remove patch"); its route label
+    // is the shortened "Patch", which adds nothing next to that title.
+    val routeSegment = when {
+        medication.medicine?.selection is MedicineSelection.Custom -> null
+        medication.applicationType == MedicationApplicationType.PATCH_OFF -> null
+        else -> appType.takeIf { it != name }
     }
     return listOfNotNull(groupName, name, routeSegment, doseText)
         .joinToString(separator = " · ")
