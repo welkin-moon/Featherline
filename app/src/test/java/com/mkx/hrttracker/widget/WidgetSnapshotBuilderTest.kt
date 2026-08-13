@@ -66,10 +66,9 @@ class WidgetSnapshotBuilderTest {
             zoneId = zoneId,
         )
 
-        val todayRow =
-            snapshot.doseRows.first { row -> row.contextChip == null && !row.isManualRecord }
+        val todayRow = snapshot.doseRows.first { row -> row.contextChip == null && !row.isManualRecord }
         assertEquals("Bicalutamide", todayRow.medicationName)
-        // Pill at count=1 with TabletFraction(1, 1): "1 tablet" portion suppressed; only active mg shown.
+        assertEquals("Oral", todayRow.routeLabel)
         assertEquals("2 mg", todayRow.doseText)
         assertEquals(1, snapshot.totalCount)
         assertEquals(0, snapshot.doneCount)
@@ -78,9 +77,6 @@ class WidgetSnapshotBuilderTest {
 
     @Test
     fun capturesAppLanguageTagFromSettings() {
-        // The widget chrome (section headers, "done"/E2 labels) is rendered live against
-        // this tag so it matches the medication/dose strings baked into the snapshot,
-        // even when the widget re-renders in a process that lost the per-app locale.
         val now = LocalDateTime.of(2026, 5, 6, 10, 15)
         stubMedicationStrings()
 
@@ -96,7 +92,7 @@ class WidgetSnapshotBuilderTest {
     }
 
     @Test
-    fun writesAggregateDoseTextToWidgetRows() {
+    fun writesAggregateDoseTextToWidgetRowsAndOmitsCustomRoute() {
         val now = LocalDateTime.of(2026, 5, 6, 10, 15)
         val group = MedicationGroup(
             uuid = UUID.randomUUID(),
@@ -133,6 +129,7 @@ class WidgetSnapshotBuilderTest {
         )
 
         val row = snapshot.doseRows.first { row -> row.contextChip == null && !row.isManualRecord }
+        assertEquals("", row.routeLabel)
         assertEquals("2 capsules · 10 mg", row.doseText)
     }
 
